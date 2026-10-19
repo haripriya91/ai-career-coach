@@ -13,7 +13,9 @@ from fastapi import HTTPException
 from src import repository
 from src.schemas import IntakeData, WorkspaceResponse 
 
-from src.schemas import ExtractionResponse
+from src.schemas import ExtractionResponse 
+
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -30,6 +32,25 @@ app = FastAPI(
     title="AI Career Coach",
     lifespan=lifespan,
 )
+
+
+# Allow the deployed frontend and local development frontend
+# to make browser requests to this API.
+# CORS does not provide authentication or conversation ownership checks.
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        # Replace this with your deployed CareerPilot AI frontend URL.
+        "https://your-careerpilot-frontend.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
 
 from fastapi import File, HTTPException, UploadFile
 from src.document_tools import (
@@ -63,7 +84,7 @@ async def extract_cv(file: UploadFile = File(...)):
                 detail="File is too large. Maximum upload size is 2 MB.",
             )
 
-        extracted_text = extract_text(file_bytes, file.filename)
+        extracted_text = await run_in_threadpool(    extract_text,    file_bytes,    file.filename,)
 
         return ExtractionResponse(
             filename=file.filename,
