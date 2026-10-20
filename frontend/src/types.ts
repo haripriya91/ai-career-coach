@@ -10,6 +10,7 @@ export type Screen =
 
 export interface IntakeData {
   workspaceId: string | null;
+  intakeVersion: number | null;
   targetRole: string;
   company: string;
   cvText: string;

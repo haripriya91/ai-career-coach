@@ -47,7 +47,6 @@ class CVFinding(BaseModel):
         "structure",
     ]
     priority: Literal["high", "medium", "low"]
-
     observation: str
     evidence_excerpt: str | None
     suggested_action: str
@@ -61,6 +60,18 @@ class CVReview(BaseModel):
     findings: list[CVFinding]
     next_steps: list[str]
     limitations: list[str]
+
+class CVReviewResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    intake_version: int
+    review: CVReview
+    created_at: datetime
+
+class CVReviewLookupResponse(BaseModel):
+    found: bool
+    message: str
+    result: CVReviewResponse | None
 
 
 # ---------- Interview requests ----------
@@ -132,3 +143,11 @@ class InterviewResponse(BaseModel):
     current_question: InterviewQuestion | None
     turns: list[InterviewTurn]
     feedback: InterviewFeedback | None
+
+
+# ---------- Workspace update ----------
+
+
+class WorkspaceUpdateRequest(BaseModel):
+    intake: IntakeData
+    expected_version: int = Field(ge=1)
