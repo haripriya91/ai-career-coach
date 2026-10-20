@@ -5,3 +5,4 @@ python-dotenv>=1,<2
 pypdf
 python-docx
 python-multipart
+openai
