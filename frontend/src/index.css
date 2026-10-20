@@ -203,3 +203,63 @@ textarea {
     padding: 20px;
   }
 }
+
+.input-options,
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.input-options {
+  margin-bottom: 24px;
+}
+
+.secondary-button {
+  padding: 11px 18px;
+  border: 1px solid #b8c3d5;
+  border-radius: 8px;
+  background: white;
+  color: #172033;
+}
+
+.secondary-button:hover {
+  background: #f0f4fb;
+}
+
+.secondary-button.selected {
+  border-color: #315cce;
+  background: #e9effc;
+  color: #244ba9;
+}
+
+.upload-panel {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border: 2px dashed #b8c3d5;
+  border-radius: 12px;
+  background: #f8faff;
+}
+
+.upload-panel label {
+  font-weight: 600;
+}
+
+.error-notice {
+  margin: 18px 0;
+  padding: 14px 18px;
+  border: 1px solid #efb5b5;
+  border-radius: 10px;
+  background: #fff0f0;
+  color: #8c2424;
+}
+
+.resume-button {
+  margin: 20px 0 12px;
+}
+
+.button-row .primary-button {
+  margin-top: 0;
+}

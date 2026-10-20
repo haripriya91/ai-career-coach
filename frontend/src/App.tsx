@@ -14,6 +14,7 @@ export default function App() {
 
   const [intake, setIntake] = useState<IntakeData>({
     workspaceId: null,
+    intakeVersion: null,
     targetRole: "",
     company: "",
     cvText: "",
