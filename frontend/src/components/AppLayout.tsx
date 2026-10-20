@@ -15,6 +15,7 @@ interface Props {
   onNavigate: (screen: Screen) => void;
   targetRole: string;
   children: ReactNode;
+  sessionControls?: ReactNode;
 }
 
 export default function AppLayout({
@@ -22,6 +23,7 @@ export default function AppLayout({
   onNavigate,
   targetRole,
   children,
+  sessionControls,
 }: Props) {
   return (
     <div className="app-layout">
@@ -49,6 +51,8 @@ export default function AppLayout({
           <small>Target role</small>
           <p>{targetRole || "Not selected yet"}</p>
         </div>
+
+        {sessionControls}
       </aside>
 
       <main className="main-content">{children}</main>
