@@ -147,7 +147,41 @@ class InterviewResponse(BaseModel):
 
 # ---------- Workspace update ----------
 
-
 class WorkspaceUpdateRequest(BaseModel):
     intake: IntakeData
     expected_version: int = Field(ge=1)
+
+
+#-------------job fit -------------------
+
+class RequirementAssessment(BaseModel):
+    requirement: str
+    importance: Literal["required", "preferred"]
+    status: Literal["matched", "partial", "not_evidenced"]
+
+    # Exact excerpts from the supplied documents.
+    job_evidence: str
+    cv_evidence: str | None
+
+    explanation: str
+    suggested_action: str
+
+
+class JobFitAssessment(BaseModel):
+    summary: str
+    requirements: list[RequirementAssessment]
+    priority_improvements: list[str]
+
+
+class JobFitResult(JobFitAssessment):
+    coverage_score: float = Field(ge=0, le=100)
+
+
+class JobFitLookupResponse(BaseModel):
+    found: bool
+    stale: bool
+    detail: str
+    artifact_id: UUID | None = None
+    intake_version: int | None = None
+    created_at: datetime | None = None
+    result: JobFitResult | None = None
