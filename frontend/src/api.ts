@@ -99,7 +99,7 @@ export interface CVFinding {
   needs_confirmation: boolean;
 }
 
-export interface CVReview {
+export interface CVReview { 
   summary: string;
   strengths: string[];
   findings: CVFinding[];
@@ -273,4 +273,58 @@ export async function finishInterview(
   );
 
   return readResponse<InterviewResponse>(response);
+}
+
+export interface JobFitRequirement {
+  requirement: string;
+  importance: "required" | "preferred";
+  status: "matched" | "partial" | "not_evidenced";
+  job_evidence: string;
+  cv_evidence: string | null;
+  explanation: string;
+  suggested_action: string;
+}
+
+export interface JobFitResult {
+  summary: string;
+  requirements: JobFitRequirement[];
+  priority_improvements: string[];
+  coverage_score: number;
+}
+
+export interface JobFitLookupResponse {
+  found: boolean;
+  stale: boolean;
+  detail: string;
+  artifact_id: string | null;
+  intake_version: number | null;
+  created_at: string | null;
+  result: JobFitResult | null;
+}
+
+export async function loadJobFit(
+  workspaceId: string,
+  signal?: AbortSignal,
+): Promise<JobFitLookupResponse> {
+  const response = await fetch(
+    `${API_URL}/api/workspaces/${encodeURIComponent(workspaceId)}/fit`,
+    { signal },
+  );
+
+  return readResponse<JobFitLookupResponse>(response);
+}
+
+export async function generateJobFit(
+  workspaceId: string,
+  signal?: AbortSignal,
+): Promise<JobFitLookupResponse> {
+  const response = await fetch(
+    `${API_URL}/api/workspaces/${encodeURIComponent(workspaceId)}/fit`,
+    {
+      method: "POST",
+      signal,
+    },
+  );
+
+  return readResponse<JobFitLookupResponse>(response);
 }

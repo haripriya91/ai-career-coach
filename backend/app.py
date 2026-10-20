@@ -57,6 +57,14 @@ from src.ai_cv import generate_cv_review, ReviewGenerationError
 from src.schemas import WorkspaceUpdateRequest
 from src.schemas import CVReviewLookupResponse
 
+from src.schemas import JobFitLookupResponse, JobFitResult
+
+from src.job_fit_service import (
+    generate_job_fit,
+    JobFitInputError,
+    JobFitGenerationError,
+)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await run_in_threadpool(open_pool)
@@ -625,6 +633,194 @@ def load_cv_review(workspace_id: UUID):
                 "created_at": artifact["created_at"],
             },
         }
+
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            503,
+            "Database unavailable. Please try again.",
+        ) from None
+
+
+def build_job_fit_response(
+    artifact: dict,
+    current_intake_version: int,
+) -> JobFitLookupResponse:
+    stale = (
+        artifact["intake_version"] != current_intake_version
+    )
+
+    return JobFitLookupResponse(
+        found=True,
+        stale=stale,
+        detail=(
+            "Your preparation details changed. Generate a new analysis."
+            if stale
+            else "Job-fit analysis is ready."
+        ),
+        artifact_id=artifact["id"],
+        intake_version=artifact["intake_version"],
+        created_at=artifact["created_at"],
+        result=JobFitResult.model_validate(artifact["output"]),
+    )
+
+@app.post(
+    "/api/workspaces/{workspace_id}/fit",
+    response_model=JobFitLookupResponse,
+)
+def create_job_fit(workspace_id: UUID):
+    try:
+        workspace = repository.get_workspace(str(workspace_id))
+
+        if workspace is None:
+            raise HTTPException(404, "Workspace not found.")
+
+        intake = IntakeData.model_validate(workspace["intake"])
+
+        if (
+            not (intake.cv_text or "").strip()
+            or not (intake.job_description or "").strip()
+        ):
+            raise HTTPException(
+                422,
+                "Add and confirm a CV and job description "
+                "before requesting job-fit analysis.",
+            )
+
+        intake_version = workspace["intake_version"]
+
+        existing = repository.get_latest_artifact(
+            workspace_id=str(workspace_id),
+            kind="fit",
+            intake_version=intake_version,
+        )
+
+        if existing is not None:
+            return build_job_fit_response(
+                existing,
+                intake_version,
+            )
+
+        # No database connection is held during the AI call.
+        result, metadata = generate_job_fit(
+            intake.model_dump(mode="json")
+        )
+
+        # Check whether the details changed during generation.
+        current = repository.get_workspace(str(workspace_id))
+
+        if current is None:
+            raise HTTPException(404, "Workspace no longer exists.")
+
+        if current["intake_version"] != intake_version:
+            raise HTTPException(
+                409,
+                "Your preparation details changed during analysis. "
+                "Please run it again.",
+            )
+
+        artifact = repository.save_artifact(
+            workspace_id=str(workspace_id),
+            kind="fit",
+            output=result.model_dump(mode="json"),
+            intake_version=intake_version,
+            meta=metadata,
+        )
+
+        # Recheck so a concurrent intake edit marks the result stale.
+        latest = repository.get_workspace(str(workspace_id))
+
+        if latest is None:
+            raise HTTPException(404, "Workspace no longer exists.")
+
+        return build_job_fit_response(
+            artifact,
+            latest["intake_version"],
+        )
+
+    except JobFitInputError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    except APITimeoutError:
+        raise HTTPException(
+            504,
+            "Job-fit analysis timed out. Please retry.",
+        ) from None
+
+    except AuthenticationError:
+        raise HTTPException(
+            503,
+            "The AI service credentials need configuration.",
+        ) from None
+
+    except RateLimitError:
+        raise HTTPException(
+            503,
+            "The AI service limit was reached. Please try later.",
+        ) from None
+
+    except APIError:
+        raise HTTPException(
+            502,
+            "The AI request failed. Check the configured model and service.",
+        ) from None
+
+    except (JobFitGenerationError, ValidationError):
+        raise HTTPException(
+            502,
+            "A valid job-fit analysis could not be produced. Please retry.",
+        ) from None
+
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            503,
+            "The database operation failed. "
+            "The analysis may not be saved.",
+        ) from None
+
+    except RuntimeError:
+        raise HTTPException(
+            503,
+            "Job-fit analysis is not configured on the backend.",
+        ) from None
+
+
+@app.get(
+    "/api/workspaces/{workspace_id}/fit",
+    response_model=JobFitLookupResponse,
+)
+def load_job_fit(workspace_id: UUID):
+    try:
+        workspace = repository.get_workspace(str(workspace_id))
+
+        if workspace is None:
+            raise HTTPException(404, "Workspace not found.")
+
+        artifact = repository.get_latest_artifact(
+            workspace_id=str(workspace_id),
+            kind="fit",
+            intake_version=workspace["intake_version"],
+        )
+
+        if artifact is None:
+            return JobFitLookupResponse(
+                found=False,
+                stale=False,
+                detail=(
+                    "No saved job-fit analysis for the current details."
+                ),
+            )
+
+        return build_job_fit_response(
+            artifact,
+            workspace["intake_version"],
+        )
+
+    except ValidationError:
+        raise HTTPException(
+            502,
+            "The saved analysis could not be loaded. "
+            "Its format is invalid.",
+        ) from None
 
     except (psycopg.Error, TimeoutError):
         raise HTTPException(
