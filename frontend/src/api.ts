@@ -176,3 +176,101 @@ export async function deleteWorkspace(
     await readResponse<unknown>(response);
   }
 }
+
+export interface InterviewQuestion {
+  id: string;
+  text: string;
+  topic: string;
+  kind: "main" | "follow_up";
+}
+
+export interface InterviewFeedback {
+  summary: string;
+  overall_score: number | null;
+  strengths: string[];
+  improvements: string[];
+  incomplete: boolean;
+  dimensions: {
+    name: string;
+    score: number | null;
+    reason: string;
+    answer_excerpt: string | null;
+    improvement: string;
+  }[];
+}
+
+export interface InterviewResponse {
+  id: string;
+  workspace_id: string;
+  status: "not_started" | "in_progress" | "processing" | "completed";
+  version: number;
+  main_questions_asked: number;
+  follow_ups_asked: number;
+  current_question: InterviewQuestion | null;
+  turns: {
+    question: InterviewQuestion;
+    answer: string;
+  }[];
+  feedback: InterviewFeedback | null;
+}
+
+export async function startInterview(
+  workspaceId: string,
+  questionCount: number,
+): Promise<InterviewResponse> {
+  const response = await fetch(`${API_URL}/api/interviews`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      workspace_id: workspaceId,
+      question_count: questionCount,
+    }),
+  });
+
+  return readResponse<InterviewResponse>(response);
+}
+
+export async function getInterview(
+  interviewId: string,
+): Promise<InterviewResponse> {
+  const response = await fetch(
+    `${API_URL}/api/interviews/${encodeURIComponent(interviewId)}`,
+  );
+
+  return readResponse<InterviewResponse>(response);
+}
+
+export async function submitInterviewAnswer(
+  interview: InterviewResponse,
+  answer: string,
+): Promise<InterviewResponse> {
+  if (!interview.current_question) {
+    throw new Error("No pending question is available.");
+  }
+
+  const response = await fetch(
+    `${API_URL}/api/interviews/${encodeURIComponent(interview.id)}/answers`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question_id: interview.current_question.id,
+        answer,
+        expected_version: interview.version,
+      }),
+    },
+  );
+
+  return readResponse<InterviewResponse>(response);
+}
+
+export async function finishInterview(
+  interviewId: string,
+): Promise<InterviewResponse> {
+  const response = await fetch(
+    `${API_URL}/api/interviews/${encodeURIComponent(interviewId)}/finish`,
+    { method: "POST" },
+  );
+
+  return readResponse<InterviewResponse>(response);
+}

@@ -365,3 +365,39 @@ select:focus-visible {
   outline: 3px solid #8bafff;
   outline-offset: 3px;
 }
+
+.interview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.interview-history {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.interview-answer {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.answer-label {
+  font-weight: 700;
+  color: #315cce;
+}
+
+.intake-form select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #b8c3d5;
+  border-radius: 8px;
+  background: white;
+  color: #172033;
+  font: inherit;
+}
