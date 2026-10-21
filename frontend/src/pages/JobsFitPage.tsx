@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { generateJobFit, loadJobFit } from "../api";
+
 import type {
   JobFitLookupResponse,
   JobFitRequirement,
 } from "../api";
 import type { PageProps } from "../types";
+import PreparationDetails from "../components/PreparationDetails";
 
 function RequirementCard({
   item,
@@ -64,7 +66,7 @@ function RequirementCard({
   );
 }
 
-export default function JobsFitPage({ intake }: PageProps) {
+export default function JobsFitPage({ intake,setIntake }: PageProps) {
   const workspaceId = intake.workspaceId;
   const intakeVersion = intake.intakeVersion;
 
@@ -266,12 +268,21 @@ export default function JobsFitPage({ intake }: PageProps) {
           </span>
         </div>
 
-        {!ready && (
-          <p className="jf-notice">
-            Open Preparation details, add your CV and job
-            description, then confirm and save your details.
-          </p>
-        )}
+      {intake.workspaceId && intake.profileConfirmed && (
+        <PreparationDetails
+          intake={intake}
+          setIntake={setIntake}
+          requireCv
+          requireJobDescription
+          disabled={loading || generating}
+        />
+      )}
+
+      {!intake.workspaceId && (
+        <p className="jf-notice">
+          Choose Check job match from Home to add your details.
+        </p>
+      )}
 
         {hasJob && (
           <details className="jf-job-preview">
@@ -287,7 +298,7 @@ export default function JobsFitPage({ intake }: PageProps) {
           </p>
         )}
 
-        {!result && (
+        {ready && !result && (
           <div className="jf-generate">
             <button
               type="button"

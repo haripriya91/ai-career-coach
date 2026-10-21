@@ -201,6 +201,7 @@ async function handleGenerate() {
 
         <button
           type="button"
+          className="primary-button"
           onClick={() => void handleGenerate()}
           disabled={ 
             generating || !company.trim() || !targetRole.trim()
