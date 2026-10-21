@@ -1,12 +1,15 @@
 import type { Dispatch, SetStateAction } from "react";
 
 export type Screen =
+  | "home"
   | "intake"
   | "review"
   | "jobs"
   | "company"
   | "interview"
   | "roadmap";
+
+export type PreparationGoal = "review" | "interview" | "jobs";
 
 export interface IntakeData {
   workspaceId: string | null;

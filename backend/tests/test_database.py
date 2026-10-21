@@ -3,7 +3,6 @@ import os
 import pytest
 
 from src import repository as db
-from src.database import open_pool, close_pool
 
 
 pytestmark = pytest.mark.skipif(
@@ -12,23 +11,9 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def database_pool():
-    """Open the pool once for the tests and close it afterward."""
-    if not os.getenv("DATABASE_URL"):
-        pytest.skip("DATABASE_URL is not configured")
-
-    open_pool()
-
-    try:
-        yield
-    finally:
-        close_pool()
-
-
 @pytest.fixture
-def workspace(database_pool):
-    """Create a fictional workspace and remove it after each test."""
+def workspace():
+    """Create fictional data and remove it after each test."""
     created = db.create_workspace({
         "target_role": "Frontend Developer",
         "company": "",

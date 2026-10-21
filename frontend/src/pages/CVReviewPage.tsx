@@ -11,51 +11,59 @@ export default function CVReviewPage({
   intake,
   setIntake,
 }: PageProps) {
+  const workspaceId = intake.workspaceId;
+  const intakeVersion = intake.intakeVersion;
+  const hasCv = Boolean(intake.cvText.trim());
+
   const [result, setResult] = useState<CVReviewResponse | null>(null);
-  const [loadingSaved, setLoadingSaved] = useState(true);
+  const [loadingSaved, setLoadingSaved] = useState(
+    Boolean(workspaceId && intake.profileConfirmed && hasCv),
+  );
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
-  const workspaceId = intake.workspaceId;
-  const intakeVersion = intake.intakeVersion;
-
+  // App.tsx remounts this page when the workspace or intake
+  // version changes, resetting loading and result state.
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId || !intake.profileConfirmed || !hasCv) return;
 
     let active = true;
 
     loadCvReview(workspaceId)
       .then((saved) => {
-        if (active) {
-          setResult(saved);
-          setError("");
-        }
+        if (!active) return;
+
+        setResult(saved);
+        setError("");
       })
       .catch((error: unknown) => {
-        if (active) {
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Could not load the saved review.",
-          );
-        }
+        if (!active) return;
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Could not load the saved review.",
+        );
       })
       .finally(() => {
-        if (active) {
-          setLoadingSaved(false);
-        }
+        if (active) setLoadingSaved(false);
       });
 
     return () => {
       active = false;
     };
-  }, [workspaceId, intakeVersion]);
+  }, [
+    workspaceId,
+    intakeVersion,
+    intake.profileConfirmed,
+    hasCv,
+  ]);
 
   async function handleGenerate() {
     if (
       !workspaceId ||
       !intake.profileConfirmed ||
-      !intake.cvText.trim() ||
+      !hasCv ||
       loadingSaved ||
       generating
     ) {
@@ -74,12 +82,12 @@ export default function CVReviewPage({
       ) {
         throw new Error(
           "The review does not match these preparation details. " +
-            "Reopen the session to load its latest details.",
+            "Reopen the preparation to load its latest details.",
         );
       }
 
       setResult(generated);
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -93,13 +101,40 @@ export default function CVReviewPage({
   if (!workspaceId || !intake.profileConfirmed) {
     return (
       <section>
-        <h2>CV Review</h2>
+        <h2>CV review</h2>
 
         <div className="card">
           <p>
-            Open Intake, check your CV text, and confirm your details first.
+            Choose “Review my CV” from Home to add and save your
+            preparation details.
           </p>
         </div>
+      </section>
+    );
+  }
+
+  if (!hasCv) {
+    return (
+      <section>
+        <p className="eyebrow">PERSONALISED CV FEEDBACK</p>
+        <h2>Add your CV to get started</h2>
+
+        <p className="muted">
+          Target role: {intake.targetRole}
+          {intake.company ? ` · ${intake.company}` : ""}
+        </p>
+
+        <p className="muted">
+          You started this preparation with your role details.
+          Upload or paste your CV below to get feedback.
+          Your existing preparation and interviews will remain available.
+        </p>
+
+        <PreparationDetails
+          intake={intake}
+          setIntake={setIntake}
+          requireCv
+        />
       </section>
     );
   }
@@ -112,8 +147,8 @@ export default function CVReviewPage({
 
   return (
     <section>
-      <p className="eyebrow">PERSONALIZED CV FEEDBACK</p>
-      <h2>CV Review</h2>
+      <p className="eyebrow">PERSONALISED CV FEEDBACK</p>
+      <h2>CV review</h2>
 
       <p className="muted">
         Target role: {intake.targetRole}
@@ -123,6 +158,7 @@ export default function CVReviewPage({
       <PreparationDetails
         intake={intake}
         setIntake={setIntake}
+        requireCv
         disabled={generating || loadingSaved}
       />
 
@@ -138,16 +174,16 @@ export default function CVReviewPage({
         <>
           {review && (
             <p className="field-help">
-              Regenerating uses the same saved details and makes another
-              AI request. Edit your preparation details first if you want
-              to add context.
+              Regenerating makes another AI request using the same
+              saved details. Edit your CV or preparation details
+              first if you want to add context.
             </p>
           )}
 
           <button
             type="button"
             className="primary-button"
-            disabled={generating || !intake.cvText.trim()}
+            disabled={generating}
             onClick={() => void handleGenerate()}
           >
             {generating
@@ -168,13 +204,6 @@ export default function CVReviewPage({
       {!loadingSaved && !review && !generating && !error && (
         <p className="muted">
           Generate a review to see strengths and practical improvements.
-        </p>
-      )}
-
-      {!intake.cvText.trim() && (
-        <p className="field-help">
-          This preparation session has no CV text. Start a new preparation
-          with your resume to use CV review.
         </p>
       )}
 
@@ -221,7 +250,9 @@ export default function CVReviewPage({
                   <h4>{finding.observation}</h4>
 
                   {finding.evidence_excerpt && (
-                    <blockquote>{finding.evidence_excerpt}</blockquote>
+                    <blockquote>
+                      {finding.evidence_excerpt}
+                    </blockquote>
                   )}
 
                   <p>
@@ -243,8 +274,8 @@ export default function CVReviewPage({
 
                   {finding.needs_confirmation && (
                     <p className="field-help">
-                      Check and confirm the details before using this
-                      suggestion.
+                      Check and confirm the details before using
+                      this suggestion.
                     </p>
                   )}
                 </article>
@@ -277,8 +308,9 @@ export default function CVReviewPage({
           )}
 
           <p className="field-help">
-            AI suggestions need your review. Copying suggested wording
-            does not change your saved CV.
+            AI can make mistakes. Check suggested wording before
+            using it. Copying a suggestion does not change your
+            saved CV.
           </p>
         </div>
       )}

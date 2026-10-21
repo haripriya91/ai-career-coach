@@ -3,8 +3,9 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { deleteWorkspace, getWorkspace } from "./api";
 import type { WorkspaceResponse } from "./api";
-import type { IntakeData, Screen } from "./types";
+import type { IntakeData, PreparationGoal, Screen } from "./types";
 
+import HomePage from "./pages/HomePage";
 import AppLayout from "./components/AppLayout";
 import IntakePage from "./pages/IntakePage";
 import CVReviewPage from "./pages/CVReviewPage";
@@ -77,13 +78,17 @@ function workspaceToIntake(
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("intake");
+  const [screen, setScreen] = useState<Screen>("home");
   const [intake, setIntakeState] = useState<IntakeData>(emptyIntake);
   const [sessions, setSessions] = useState<SavedSession[]>(readHistory);
 
   const [selectedId, setSelectedId] = useState("");
   const [sessionBusy, setSessionBusy] = useState(false);
   const [sessionError, setSessionError] = useState("");
+
+  const [preparationGoal, setPreparationGoal] =
+  useState<PreparationGoal>("review");
+  const pendingGoalRef = useRef<PreparationGoal | null>(null);
 
   const intakeRef = useRef(intake);
   const historyRef = useRef(sessions);
@@ -104,7 +109,9 @@ export default function App() {
     if (next.workspaceId && next.profileConfirmed) {
       const entry = {
         id: next.workspaceId,
-        label: next.targetRole || "Preparation session",
+        label: [next.targetRole || "Preparation", next.company]
+          .filter(Boolean)
+          .join(" · "),
       };
 
       const updated = [
@@ -121,12 +128,23 @@ export default function App() {
   const setIntake: Dispatch<SetStateAction<IntakeData>> = (action) => {
     if (renderEpoch !== epochRef.current) return;
 
+    const previous = intakeRef.current;
     const next =
-      typeof action === "function"
-        ? action(intakeRef.current)
-        : action;
+      typeof action === "function" ? action(previous) : action;
 
     commitIntake(next);
+
+    const hasJustSaved =
+      next.profileConfirmed &&
+      Boolean(next.workspaceId) &&
+      (!previous.profileConfirmed ||
+        previous.workspaceId !== next.workspaceId);
+
+    if (hasJustSaved && pendingGoalRef.current) {
+      const destination = pendingGoalRef.current;
+      pendingGoalRef.current = null;
+      setScreen(destination);
+    }
   };
 
  function startNewSession() {
@@ -142,8 +160,11 @@ export default function App() {
 
   advanceSessionEpoch();
 
+  pendingGoalRef.current = null;
+  setPreparationGoal("review");
+
   commitIntake(emptyIntake());
-  setScreen("intake");
+  setScreen("home");
   setSelectedId("");
   setSessionError("");
 }
@@ -161,6 +182,8 @@ async function openSession() {
 
   advanceSessionEpoch();
 
+  pendingGoalRef.current = null;
+
   setSessionBusy(true);
   setSessionError("");
 
@@ -168,7 +191,7 @@ async function openSession() {
     const workspace = await getWorkspace(selectedId);
 
     commitIntake(workspaceToIntake(workspace));
-    setScreen("intake");
+    setScreen("home");
   } catch (error) {
     setSessionError(
       error instanceof Error
@@ -194,6 +217,7 @@ async function removeCurrentSession() {
   }
 
   advanceSessionEpoch();
+  pendingGoalRef.current = null;
 
   setSessionBusy(true);
   setSessionError("");
@@ -220,7 +244,7 @@ async function removeCurrentSession() {
     }
 
     commitIntake(emptyIntake());
-    setScreen("intake");
+    setScreen("home");
     setSelectedId("");
   } catch (error) {
     setSessionError(
@@ -233,86 +257,141 @@ async function removeCurrentSession() {
   }
 }
 
-  const pages = {
-    intake: IntakePage,
-    review: CVReviewPage,
-    jobs: JobsFitPage,
-    company: CompanyPrepPage,
-    interview: InterviewPage,
-    roadmap: RoadmapPage,
-  };
+function chooseGoal(goal: PreparationGoal) {
+  if (sessionBusy) return;
 
-  const CurrentPage = pages[screen];
+  const current = intakeRef.current;
+
+  if (current.workspaceId && current.profileConfirmed) {
+    pendingGoalRef.current = null;
+    setScreen(goal);
+    return;
+  }
+
+  pendingGoalRef.current = goal;
+  setPreparationGoal(goal);
+  setScreen("intake");
+}
+
+function navigate(next: Screen) {
+  if (sessionBusy) return;
+
+  if (
+    next === "review" ||
+    next === "interview" ||
+    next === "jobs"
+  ) {
+    chooseGoal(next);
+    return;
+  }
+
+  pendingGoalRef.current = null;
+  setScreen(next);
+}
+
+const pages = {
+  review: CVReviewPage,
+  jobs: JobsFitPage,
+  company: CompanyPrepPage,
+  interview: InterviewPage,
+  roadmap: RoadmapPage,
+};
+
+const CurrentPage =
+  screen === "home" || screen === "intake"
+    ? null
+    : pages[screen];
 
   const controls = (
-    <div className="session-controls">
+  <div className="session-controls">
+    <label htmlFor="saved-session">Saved preparations</label>
+
+    <select
+      id="saved-session"
+      value={selectedId}
+      disabled={sessionBusy || sessions.length === 0}
+      aria-describedby="saved-session-help"
+      onChange={(event) => setSelectedId(event.target.value)}
+    >
+      <option value="">
+        {sessions.length === 0
+          ? "No saved preparations yet"
+          : "Choose a preparation"}
+      </option>
+
+      {sessions.map((session) => (
+        <option key={session.id} value={session.id}>
+          {session.label}
+        </option>
+      ))}
+    </select>
+
+    <p id="saved-session-help" className="field-help">
+      Select a preparation, then click Open.
+    </p>
+
+    <button
+      type="button"
+      className="primary-button open-preparation-button"
+      disabled={!selectedId || sessionBusy}
+      onClick={() => void openSession()}
+    >
+      {sessionBusy ? "Opening…" : "Open preparation"}
+    </button>
+
+    {intake.workspaceId && (
       <button
         type="button"
-        className="secondary-button"
+        className="danger-button"
         disabled={sessionBusy}
-        onClick={startNewSession}
+        onClick={() => void removeCurrentSession()}
       >
-        Start new preparation
+        Delete current preparation
       </button>
+    )}
 
-      <label htmlFor="saved-session">Saved preparations</label>
-
-      <select
-        id="saved-session"
-        value={selectedId}
-        disabled={sessionBusy}
-        onChange={(event) => setSelectedId(event.target.value)}
-      >
-        <option value="">Choose a session</option>
-        {sessions.map((session) => (
-          <option key={session.id} value={session.id}>
-            {session.label} · {session.id.slice(0, 8)}
-          </option>
-        ))}
-      </select>
-
-      <button
-        type="button"
-        className="secondary-button"
-        disabled={!selectedId || sessionBusy}
-        onClick={() => void openSession()}
-      >
-        Open saved preparation
-      </button>
-
-      {intake.workspaceId && (
-        <button
-          type="button"
-          className="danger-button"
-          disabled={sessionBusy}
-          onClick={() => void removeCurrentSession()}
-        >
-          Delete current preparation
-        </button>
-      )}
-
-      {sessionError && <p role="alert">{sessionError}</p>}
-    </div>
-  );
+    {sessionError && (
+      <p className="error-notice" role="alert">
+        {sessionError}
+      </p>
+    )}
+  </div>
+);
 
   return (
     <AppLayout
       screen={screen}
-      onNavigate={(next) => {
-        if (!sessionBusy) setScreen(next);
-      }}
+      onNavigate={navigate}
       targetRole={intake.targetRole}
       sessionControls={controls}
+      onNewPreparation={startNewSession}
+      sessionBusy={sessionBusy}
     >
       {sessionBusy ? (
         <p role="status">Updating preparation session…</p>
-      ) : (
+      ) : screen === "home" ? (
+        <HomePage
+          intake={intake}
+          onChooseGoal={chooseGoal}
+          onContinue={() =>
+            chooseGoal(intake.cvText.trim() ? "review" : "interview")
+          }
+        />
+      ) : screen === "intake" ? (
+        <IntakePage
+          key={`intake:${preparationGoal}:${intake.workspaceId ?? "new"}:${intake.intakeVersion ?? 0}:${renderEpoch}`}
+          intake={intake}
+          setIntake={setIntake}
+          goal={preparationGoal}
+          onChooseGoal={chooseGoal}
+        />
+      ) : CurrentPage ? (
         <CurrentPage
           key={`${screen}:${intake.workspaceId ?? "new"}:${intake.intakeVersion ?? 0}:${renderEpoch}`}
           intake={intake}
           setIntake={setIntake}
         />
-      )}
+      ) : null}
     </AppLayout>
   );
 }
