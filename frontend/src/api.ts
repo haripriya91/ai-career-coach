@@ -327,7 +327,7 @@ export async function generateJobFit(
   );
 
   return readResponse<JobFitLookupResponse>(response);
-}
+} 
 
 export interface LearningActivity {
   id: string;
@@ -403,4 +403,80 @@ export async function generateRoadmap(
   );
 
   return readResponse<RoadmapLookupResponse>(response);
+} 
+
+// ---------- Company Interview Preparation ----------
+
+export interface CompanySource {
+  title: string;
+  url: string;
+}
+
+export interface CompanyInterviewQuestion {
+  category:
+    | "technical"
+    | "behavioral"
+    | "role_specific"
+    | "company_specific";
+  question: string;
+  preparation_tip: string;
+}
+
+export interface CompanyPrepResult {
+  company_name: string;
+  target_role: string;
+  company_overview: string;
+  company_values: string[];
+  company_culture: string[];
+  interview_process: string[];
+  key_skills: string[];
+  likely_interview_topics: string[];
+  practice_questions: CompanyInterviewQuestion[];
+  preparation_tips: string[];
+  sources: CompanySource[];
+  limitations: string[];
+}
+
+export interface CompanyPrepResponse {
+  id: string;
+  workspace_id: string;
+  intake_version: number;
+  result: CompanyPrepResult;
+  created_at: string;
+}
+
+export interface CompanyPrepLookupResponse {
+  found: boolean;
+  stale: boolean;
+  detail: string;
+  result: CompanyPrepResponse | null;
+}
+
+// GET: Load an existing company preparation report.
+export async function loadCompanyPrep(
+  workspaceId: string,
+  signal?: AbortSignal,
+): Promise<CompanyPrepLookupResponse> {
+  const response = await fetch(
+    `${API_URL}/api/workspaces/${encodeURIComponent(workspaceId)}/company-prep`,
+    { signal },
+  );
+
+  return readResponse<CompanyPrepLookupResponse>(response);
+}
+
+// POST: Generate a new report or return a cached one.
+export async function generateCompanyPrep(
+  workspaceId: string,
+  signal?: AbortSignal,
+): Promise<CompanyPrepResponse> {
+  const response = await fetch(
+    `${API_URL}/api/workspaces/${encodeURIComponent(workspaceId)}/company-prep`,
+    {
+      method: "POST",
+      signal,
+    },
+  );
+
+  return readResponse<CompanyPrepResponse>(response);
 }

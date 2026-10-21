@@ -49,6 +49,7 @@ from openai import (
     APITimeoutError,
     AuthenticationError,
     RateLimitError,
+    OpenAIError
 )
 from pydantic import ValidationError
 
@@ -63,6 +64,17 @@ from src.job_fit_service import (
     generate_job_fit,
     JobFitInputError,
     JobFitGenerationError,
+) 
+
+from src.schemas import (
+    CompanyPrepResult,
+    CompanyPrepResponse,
+    CompanyPrepLookupResponse,
+) 
+
+from src.ai_company import (
+    generate_company_prep,
+    CompanyResearchError,
 )
 
 from src.schemas import RoadmapRequest, RoadmapLookupResponse
@@ -1153,3 +1165,241 @@ def delete_workspace(workspace_id: UUID):
 
     return None
 
+
+@app.post(
+    "/api/workspaces/{workspace_id}/company-prep",
+    response_model=CompanyPrepResponse,
+)
+
+def create_company_prep(workspace_id: UUID):
+    """Research a company and save interview preparation."""
+
+    try:
+        # 1. Load workspace.
+        workspace = repository.get_workspace(
+            str(workspace_id)
+        )
+
+        if workspace is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Workspace not found.",
+            )
+
+        # 2. Validate company and role.
+        intake = IntakeData.model_validate(
+            workspace["intake"]
+        )
+
+        if not intake.company.strip():
+            raise HTTPException(
+                status_code=422,
+                detail="Please provide a company name.",
+            )
+
+        if not intake.target_role.strip():
+            raise HTTPException(
+                status_code=422,
+                detail="Please provide a target role.",
+            )
+
+        intake_version = workspace["intake_version"]
+
+        # 3. Check for a previously generated report.
+        existing = repository.get_latest_artifact(
+            workspace_id=str(workspace_id),
+            kind="company_prep",
+            intake_version=intake_version,
+        )
+
+        if existing is not None:
+            existing_result = CompanyPrepResult.model_validate(
+                existing["output"]
+            )
+
+            # Only reuse reports with real research sources.
+            # Old temporary test reports have no sources.
+            if existing_result.sources:
+                return CompanyPrepResponse(
+                    id=existing["id"],
+                    workspace_id=workspace_id,
+                    intake_version=existing["intake_version"],
+                    result=existing_result,
+                    created_at=existing["created_at"],
+                )
+
+        # 4. Perform actual web research and AI generation.
+        # No database connection is held during this call.
+        result = generate_company_prep(
+            intake.model_dump(mode="json")
+        )
+
+        # 5. Check whether the workspace changed
+        # while research was running.
+        current = repository.get_workspace(
+            str(workspace_id)
+        )
+
+        if current is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Workspace no longer exists.",
+            )
+
+        if current["intake_version"] != intake_version:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Workspace details changed during research. "
+                    "Please try again."
+                ),
+            )
+
+        # 6. Save the researched report.
+        artifact = repository.save_artifact(
+            workspace_id=str(workspace_id),
+            kind="company_prep",
+            output=result.model_dump(mode="json"),
+            intake_version=intake_version,
+            sources=[
+                source.model_dump(mode="json")
+                for source in result.sources
+            ],
+            meta={"generator": "openai_web_search"},
+        )
+
+        # 7. Return the saved report.
+        return CompanyPrepResponse(
+            id=artifact["id"],
+            workspace_id=workspace_id,
+            intake_version=artifact["intake_version"],
+            result=result,
+            created_at=artifact["created_at"],
+        )
+
+    except CompanyResearchError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from None
+
+    except APITimeoutError:
+        raise HTTPException(
+            status_code=504,
+            detail="Company research timed out. Please retry.",
+        ) from None
+
+    except AuthenticationError:
+        raise HTTPException(
+            status_code=503,
+            detail="OpenAI API credentials are invalid.",
+        ) from None
+
+    except RateLimitError:
+        raise HTTPException(
+            status_code=503,
+            detail="OpenAI rate limit reached. Try again later.",
+        ) from None
+
+    except OpenAIError:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "The AI research service failed. "
+                "Check your model and web search access."
+            ),
+        ) from None
+
+    except ValidationError:
+        raise HTTPException(
+            status_code=502,
+            detail="The company report has an invalid format.",
+        ) from None
+
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable. Please try again.",
+        ) from None
+
+@app.get(
+    "/api/workspaces/{workspace_id}/company-prep",
+    response_model=CompanyPrepLookupResponse,
+)
+
+def get_company_prep(workspace_id: UUID):
+    """Load the latest saved company preparation report."""
+
+    try:
+        # 1. Load the workspace.
+        workspace = repository.get_workspace(
+            str(workspace_id)
+        )
+
+        if workspace is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Workspace not found.",
+            )
+
+        # 2. Retrieve the latest report for
+        # the current workspace version.
+        artifact = repository.get_latest_artifact(
+            workspace_id=str(workspace_id),
+            kind="company_prep",
+            intake_version=workspace["intake_version"],
+        )
+
+        if artifact is None:
+            return CompanyPrepLookupResponse(
+                found=False,
+                stale=False,
+                detail=(
+                    "No company preparation report found "
+                    "for the current workspace details."
+                ),
+                result=None,
+            )
+
+        # 3. Validate the saved report.
+        result = CompanyPrepResult.model_validate(
+            artifact["output"]
+        )
+
+        # 4. Identify temporary reports.
+        if not result.sources:
+            return CompanyPrepLookupResponse(
+                found=False,
+                stale=False,
+                detail=(
+                    "Only a temporary report exists. "
+                    "Generate company research to continue."
+                ),
+                result=None,
+            )
+
+        # 5. Return the researched report.
+        return CompanyPrepLookupResponse(
+            found=True,
+            stale=False,
+            detail="Company preparation report loaded.",
+            result=CompanyPrepResponse(
+                id=artifact["id"],
+                workspace_id=workspace_id,
+                intake_version=artifact["intake_version"],
+                result=result,
+                created_at=artifact["created_at"],
+            ),
+        )
+
+    except ValidationError:
+        raise HTTPException(
+            status_code=502,
+            detail="Saved company report has an invalid format.",
+        ) from None
+
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable. Please try again.",
+        ) from None
