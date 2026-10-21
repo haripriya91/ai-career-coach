@@ -328,3 +328,79 @@ export async function generateJobFit(
 
   return readResponse<JobFitLookupResponse>(response);
 }
+
+export interface LearningActivity {
+  id: string;
+  week: number;
+  category: "skill_practice" | "interview_practice" | "cv_evidence";
+  title: string;
+  purpose: string;
+  reason: string;
+  minutes: number;
+  instructions: string[];
+  fields: { label: string; placeholder: string }[];
+  hint: string | null;
+  example: string | null;
+  checklist: string[];
+  source_refs: string[];
+}
+
+export interface LearningRoadmap {
+  title: string;
+  summary: string;
+  activities: LearningActivity[];
+  hours_per_week: number;
+  duration_weeks: number;
+  based_on: string[];
+}
+
+export interface RoadmapResponse {
+  id: string;
+  workspace_id: string;
+  intake_version: number;
+  created_at: string;
+  plan: LearningRoadmap;
+}
+
+export interface RoadmapLookupResponse {
+  found: boolean;
+  stale: boolean;
+  message: string;
+  result: RoadmapResponse | null;
+}
+
+export async function loadRoadmap(
+  workspaceId: string,
+  signal?: AbortSignal,
+): Promise<RoadmapLookupResponse> {
+  const response = await fetch(
+    `${API_URL}/api/workspaces/${encodeURIComponent(workspaceId)}/roadmap`,
+    { signal },
+  );
+
+  return readResponse<RoadmapLookupResponse>(response);
+}
+
+export async function generateRoadmap(
+  workspaceId: string,
+  hoursPerWeek: number,
+  durationWeeks: number,
+  intakeVersion: number,
+  signal?: AbortSignal,
+): Promise<RoadmapLookupResponse> {
+  const response = await fetch(
+    `${API_URL}/api/workspaces/${encodeURIComponent(workspaceId)}/roadmap`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        hours_per_week: hoursPerWeek,
+        duration_weeks: durationWeeks,
+        expected_intake_version: intakeVersion,
+      }),
+      signal,
+    },
+  );
+
+  return readResponse<RoadmapLookupResponse>(response);
+}
