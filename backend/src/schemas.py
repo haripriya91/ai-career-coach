@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 
 
 # ---------- File extraction ----------
@@ -137,12 +137,18 @@ class InterviewResponse(BaseModel):
     ]
 
     version: int
+    question_count: int
     main_questions_asked: int
     follow_ups_asked: int
 
     current_question: InterviewQuestion | None
     turns: list[InterviewTurn]
     feedback: InterviewFeedback | None
+
+    @computed_field
+    @property
+    def is_completed(self) -> bool:
+        return self.status == "completed"
 
 
 # ---------- Workspace update ----------
