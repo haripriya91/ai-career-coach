@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, computed_field
 
 
 # ---------- File extraction ----------
@@ -137,12 +137,18 @@ class InterviewResponse(BaseModel):
     ]
 
     version: int
+    question_count: int
     main_questions_asked: int
     follow_ups_asked: int
 
     current_question: InterviewQuestion | None
     turns: list[InterviewTurn]
     feedback: InterviewFeedback | None
+
+    @computed_field
+    @property
+    def is_completed(self) -> bool:
+        return self.status == "completed"
 
 
 # ---------- Workspace update ----------
@@ -186,8 +192,72 @@ class JobFitLookupResponse(BaseModel):
     created_at: datetime | None = None
     result: JobFitResult | None = None 
 
-    
-    
+
+# ---------- Learning roadmap ----------
+
+class RoadmapRequest(BaseModel):
+    hours_per_week: int = Field(default=3, ge=1, le=10)
+    duration_weeks: int = Field(default=2, ge=1, le=4)
+    expected_intake_version: int = Field(ge=1)
+
+
+class LearningField(BaseModel):
+    label: str
+    placeholder: str
+
+
+class LearningActivity(BaseModel):
+    # Assigned by the backend after generation.
+    id: str
+    week: int
+    category: Literal[
+        "skill_practice",
+        "interview_practice",
+        "cv_evidence",
+    ]
+    title: str
+    purpose: str
+    reason: str
+    minutes: int
+    instructions: list[str]
+    fields: list[LearningField]
+    hint: str | None
+    example: str | None
+    checklist: list[str]
+    source_refs: list[
+        Literal["cv", "job_description", "review", "fit", "interview"]
+    ]
+
+
+class RoadmapContent(BaseModel):
+    """Structured content requested from the AI."""
+
+    title: str
+    summary: str
+    activities: list[LearningActivity]
+
+
+class LearningRoadmap(RoadmapContent):
+    hours_per_week: int
+    duration_weeks: int
+    based_on: list[str]
+
+
+class RoadmapResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    intake_version: int
+    created_at: datetime
+    plan: LearningRoadmap
+
+
+class RoadmapLookupResponse(BaseModel):
+    found: bool
+    stale: bool
+    message: str
+    result: RoadmapResponse | None = None
+
+
 # ---------- Company-specific interview preparation ----------
 
 class CompanySource(BaseModel):
@@ -234,3 +304,5 @@ class CompanyPrepLookupResponse(BaseModel):
     stale: bool
     detail: str
     result: CompanyPrepResponse | None = None
+
+    result: JobFitResult | None = None

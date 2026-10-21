@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
+import logging
+from contextlib import contextmanager
+from psycopg_pool import PoolTimeout
+
+logger = logging.getLogger("uvicorn.error")
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(BACKEND_DIR / ".env")
@@ -34,6 +39,7 @@ def open_pool():
         min_size=1,
         max_size=4,
         timeout=10,
+        check=ConnectionPool.check_connection,
         kwargs={
             "row_factory": dict_row,
             "connect_timeout": 10,
@@ -43,7 +49,11 @@ def open_pool():
 
     try:
         pool.open(wait=True, timeout=15)
-    except Exception:
+    except Exception as exc:
+        logger.error(
+            "Database pool startup failed: error_type=%s",
+            type(exc).__name__,
+        )
         pool.close()
         raise
 
@@ -59,12 +69,31 @@ def close_pool():
         _pool = None
 
 
+@contextmanager
 def get_connection():
-    """Return a context manager that borrows a pooled connection."""
+    """Borrow a connection and log database failures."""
     if _pool is None:
         raise RuntimeError("Database pool has not been started.")
 
-    return _pool.connection()
+    try:
+        with _pool.connection() as connection:
+            yield connection
+
+    except PoolTimeout:
+        logger.error(
+            "Database pool timeout: no usable connection became available. "
+            "Pool stats: %s",
+            _pool.get_stats(),
+        )
+        raise
+
+    except psycopg.Error as exc:
+        logger.error(
+            "Database operation failed: error_type=%s sqlstate=%s",
+            type(exc).__name__,
+            exc.sqlstate,
+        )
+        raise
 
 
 def create_tables():
