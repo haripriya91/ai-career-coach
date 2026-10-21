@@ -185,3 +185,67 @@ class JobFitLookupResponse(BaseModel):
     intake_version: int | None = None
     created_at: datetime | None = None
     result: JobFitResult | None = None
+
+# ---------- Learning roadmap ----------
+
+class RoadmapRequest(BaseModel):
+    hours_per_week: int = Field(default=3, ge=1, le=10)
+    duration_weeks: int = Field(default=2, ge=1, le=4)
+    expected_intake_version: int = Field(ge=1)
+
+
+class LearningField(BaseModel):
+    label: str
+    placeholder: str
+
+
+class LearningActivity(BaseModel):
+    # Assigned by the backend after generation.
+    id: str
+    week: int
+    category: Literal[
+        "skill_practice",
+        "interview_practice",
+        "cv_evidence",
+    ]
+    title: str
+    purpose: str
+    reason: str
+    minutes: int
+    instructions: list[str]
+    fields: list[LearningField]
+    hint: str | None
+    example: str | None
+    checklist: list[str]
+    source_refs: list[
+        Literal["cv", "job_description", "review", "fit", "interview"]
+    ]
+
+
+class RoadmapContent(BaseModel):
+    """Structured content requested from the AI."""
+
+    title: str
+    summary: str
+    activities: list[LearningActivity]
+
+
+class LearningRoadmap(RoadmapContent):
+    hours_per_week: int
+    duration_weeks: int
+    based_on: list[str]
+
+
+class RoadmapResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    intake_version: int
+    created_at: datetime
+    plan: LearningRoadmap
+
+
+class RoadmapLookupResponse(BaseModel):
+    found: bool
+    stale: bool
+    message: str
+    result: RoadmapResponse | None = None

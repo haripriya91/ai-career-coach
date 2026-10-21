@@ -260,3 +260,28 @@ def get_latest_artifact(
         ).fetchone()
 
     return _clean(row)
+
+def get_latest_completed_interview(
+    workspace_id: str,
+    intake_version: int,
+) -> dict | None:
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT *
+            FROM interviews
+            WHERE workspace_id = %s
+              AND intake_version = %s
+              AND status = 'completed'
+              AND feedback IS NOT NULL
+              AND feedback <> 'null'::jsonb
+              AND jsonb_array_length(
+                  COALESCE(state->'turns', '[]'::jsonb)
+              ) > 0
+            ORDER BY updated_at DESC, created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (UUID(workspace_id), intake_version),
+        ).fetchone()
+
+    return _clean(row)

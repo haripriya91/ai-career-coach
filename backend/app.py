@@ -65,6 +65,17 @@ from src.job_fit_service import (
     JobFitGenerationError,
 )
 
+from src.schemas import RoadmapRequest, RoadmapLookupResponse
+
+from src.roadmap_service import (
+    create_saved_roadmap,
+    load_saved_roadmap,
+    RoadmapInputError,
+    RoadmapGenerationError,
+    RoadmapChangedError,
+    RoadmapNotFoundError,
+)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await run_in_threadpool(open_pool)
@@ -1017,6 +1028,76 @@ def load_job_fit(workspace_id: UUID):
             503,
             "Database unavailable. Please try again.",
         ) from None
+
+def roadmap_http_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, RoadmapNotFoundError):
+        return HTTPException(404, str(exc))
+
+    if isinstance(exc, RoadmapInputError):
+        return HTTPException(422, str(exc))
+
+    if isinstance(exc, RoadmapChangedError):
+        return HTTPException(409, str(exc))
+
+    if isinstance(exc, APITimeoutError):
+        return HTTPException(504, "Plan generation timed out. Please retry.")
+
+    if isinstance(exc, AuthenticationError):
+        return HTTPException(503, "The AI service credentials need configuration.")
+
+    if isinstance(exc, RateLimitError):
+        return HTTPException(503, "AI usage limit reached. Please try later.")
+
+    if isinstance(exc, APIError):
+        return HTTPException(502, "The AI request failed. Please retry.")
+
+    if isinstance(exc, (RoadmapGenerationError, ValidationError)):
+        return HTTPException(502, "A valid learning plan could not be produced.")
+
+    if isinstance(exc, (psycopg.Error, TimeoutError)):
+        return HTTPException(
+            503,
+            "Database unavailable. The plan may not have been saved.",
+        )
+
+    return HTTPException(503, "Learning-plan generation is not configured.")
+
+
+@app.post(
+    "/api/workspaces/{workspace_id}/roadmap",
+    response_model=RoadmapLookupResponse,
+)
+def create_roadmap(workspace_id: UUID, request: RoadmapRequest):
+    try:
+        return create_saved_roadmap(str(workspace_id), request)
+    except (
+        RoadmapNotFoundError,
+        RoadmapInputError,
+        RoadmapChangedError,
+        RoadmapGenerationError,
+        ValidationError,
+        APIError,
+        psycopg.Error,
+        TimeoutError,
+        RuntimeError,
+    ) as exc:
+        raise roadmap_http_error(exc) from None
+
+
+@app.get(
+    "/api/workspaces/{workspace_id}/roadmap",
+    response_model=RoadmapLookupResponse,
+)
+def load_roadmap(workspace_id: UUID):
+    try:
+        return load_saved_roadmap(str(workspace_id))
+    except (
+        RoadmapNotFoundError,
+        ValidationError,
+        psycopg.Error,
+        TimeoutError,
+    ) as exc:
+        raise roadmap_http_error(exc) from None
 
 @app.put(
     "/api/workspaces/{workspace_id}",
