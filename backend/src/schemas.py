@@ -184,4 +184,53 @@ class JobFitLookupResponse(BaseModel):
     artifact_id: UUID | None = None
     intake_version: int | None = None
     created_at: datetime | None = None
-    result: JobFitResult | None = None
+    result: JobFitResult | None = None 
+
+    
+    
+# ---------- Company-specific interview preparation ----------
+
+class CompanySource(BaseModel):
+    title: str
+    url: str
+
+
+class CompanyInterviewQuestion(BaseModel):
+    category: Literal[
+        "technical",
+        "behavioral",
+        "role_specific",
+        "company_specific",
+    ]
+    question: str
+    preparation_tip: str
+
+
+class CompanyPrepResult(BaseModel):
+    company_name: str
+    target_role: str
+    company_overview: str
+    company_values: list[str]
+    company_culture: list[str]
+    interview_process: list[str]
+    key_skills: list[str]
+    likely_interview_topics: list[str]
+    practice_questions: list[CompanyInterviewQuestion]
+    preparation_tips: list[str]
+    sources: list[CompanySource]
+    limitations: list[str]
+
+
+class CompanyPrepResponse(BaseModel):
+    id: UUID
+    workspace_id: UUID
+    intake_version: int
+    result: CompanyPrepResult
+    created_at: datetime
+
+
+class CompanyPrepLookupResponse(BaseModel):
+    found: bool
+    stale: bool
+    detail: str
+    result: CompanyPrepResponse | None = None
