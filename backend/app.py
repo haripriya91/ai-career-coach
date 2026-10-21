@@ -516,8 +516,198 @@ def submit_interview_answer(
             if feedback_data is not None
             else None
         ),
+    ) 
+
+
+
+@app.post(
+    "/api/interviews/{interview_id}/finish",
+    response_model=InterviewResponse,
+)
+
+def finish_interview(interview_id: UUID):
+    """Finish an interview early and generate feedback."""
+
+    # 1. Load the saved interview.
+    try:
+        interview = repository.get_interview(str(interview_id))
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable. Please try again.",
+        ) from None
+
+    if interview is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Interview not found.",
+        )
+
+    # 2. Return existing results if already completed.
+    if interview["status"] == "completed":
+        state = interview["state"]
+
+        return InterviewResponse(
+            id=interview["id"],
+            workspace_id=interview["workspace_id"],
+            status=interview["status"],
+            version=interview["version"],
+            main_questions_asked=state["main_questions_asked"],
+            follow_ups_asked=state["follow_ups_asked"],
+            current_question=None,
+            turns=[
+                InterviewTurn(
+                    question=InterviewQuestion(**turn["question"]),
+                    answer=turn["answer"],
+                )
+                for turn in state["turns"]
+            ],
+            feedback=(
+                InterviewFeedback.model_validate(interview["feedback"])
+                if interview["feedback"] is not None
+                else None
+            ),
+        )
+
+    # 3. Only active interviews can be finished.
+    if interview["status"] != "in_progress":
+        raise HTTPException(
+            status_code=409,
+            detail="Interview is not ready to finish. Reload progress.",
+        )
+
+    state = interview["state"]
+    turns = state["turns"]
+
+    # 4. At least one answer is needed for meaningful feedback.
+    if not turns:
+        raise HTTPException(
+            status_code=400,
+            detail="Answer at least one question before finishing.",
+        )
+
+    # 5. Generate feedback using the existing AI service.
+    try:
+        feedback_data = generate_interview_feedback(
+            intake=interview["intake_snapshot"],
+            turns=turns,
+            question_count=state["question_count"],
+        )
+    except InterviewGenerationError:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not generate feedback. Please try again.",
+        ) from None
+
+    # 6. Early-finish feedback must be marked incomplete.
+    feedback_data = InterviewFeedback.model_validate(
+        feedback_data
+    ).model_dump(mode="json")
+
+    feedback_data["incomplete"] = True
+
+    # 7. Clear the pending question.
+    updated_state = {
+        **state,
+        "current_question": None,
+    }
+
+    # 8. Save the completed interview and feedback.
+    try:
+        saved = repository.save_interview(
+            interview_id=str(interview_id),
+            state=updated_state,
+            status="completed",
+            expected_version=interview["version"],
+            feedback=feedback_data,
+        )
+    except repository.ConflictError:
+        raise HTTPException(
+            status_code=409,
+            detail="Interview changed. Reload progress and try again.",
+        ) from None
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable. Please try again.",
+        ) from None
+
+    # 9. Return the final interview result.
+    return InterviewResponse(
+        id=saved["id"],
+        workspace_id=saved["workspace_id"],
+        status=saved["status"],
+        version=saved["version"],
+        main_questions_asked=updated_state["main_questions_asked"],
+        follow_ups_asked=updated_state["follow_ups_asked"],
+        current_question=None,
+        turns=[
+            InterviewTurn(
+                question=InterviewQuestion(**turn["question"]),
+                answer=turn["answer"],
+            )
+            for turn in updated_state["turns"]
+        ],
+        feedback=InterviewFeedback.model_validate(feedback_data),
     )
 
+
+@app.get(
+    "/api/interviews/{interview_id}",
+    response_model=InterviewResponse,
+)
+def load_interview(interview_id: UUID):
+    """Load a saved interview and its current progress."""
+
+    # 1. Retrieve the interview from the database.
+    try:
+        interview = repository.get_interview(str(interview_id))
+    except (psycopg.Error, TimeoutError):
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable. Please try again.",
+        ) from None
+
+    # 2. Check that the interview exists.
+    if interview is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Interview not found.",
+        )
+
+    # 3. Read the saved interview state.
+    state = interview["state"]
+    current_question = state.get("current_question")
+    feedback_data = interview.get("feedback")
+
+    # 4. Return the data in the existing response format.
+    return InterviewResponse(
+        id=interview["id"],
+        workspace_id=interview["workspace_id"],
+        status=interview["status"],
+        version=interview["version"],
+        main_questions_asked=state["main_questions_asked"],
+        follow_ups_asked=state["follow_ups_asked"],
+        current_question=(
+            InterviewQuestion(**current_question)
+            if current_question is not None
+            else None
+        ),
+        turns=[
+            InterviewTurn(
+                question=InterviewQuestion(**turn["question"]),
+                answer=turn["answer"],
+            )
+            for turn in state.get("turns", [])
+        ],
+        feedback=(
+            InterviewFeedback.model_validate(feedback_data)
+            if feedback_data is not None
+            else None
+        ),
+    )
+
+ 
 
 @app.post(
     "/api/workspaces/{workspace_id}/review",
