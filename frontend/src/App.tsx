@@ -387,7 +387,8 @@ const CurrentPage =
         />
       ) : CurrentPage ? (
         <CurrentPage
-          key={`${screen}:${intake.workspaceId ?? "new"}:${intake.intakeVersion ?? 0}:${renderEpoch}`}
+          //key={`${screen}:${intake.workspaceId ?? "new"}:${intake.intakeVersion ?? 0}:${renderEpoch}`}
+          key={`${screen}:${renderEpoch}`}
           intake={intake}
           setIntake={setIntake}
         />

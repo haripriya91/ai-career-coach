@@ -257,7 +257,6 @@ class RoadmapLookupResponse(BaseModel):
     message: str
     result: RoadmapResponse | None = None
 
-
 # ---------- Company-specific interview preparation ----------
 
 class CompanySource(BaseModel):
@@ -304,5 +303,3 @@ class CompanyPrepLookupResponse(BaseModel):
     stale: bool
     detail: str
     result: CompanyPrepResponse | None = None
-
-    result: JobFitResult | None = None
