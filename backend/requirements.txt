@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 psycopg[binary]>=3.2,<4
 python-dotenv>=1,<2
+pydantic
 pypdf
 python-docx
 python-multipart

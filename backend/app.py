@@ -1,4 +1,5 @@
 
+import os
 from fastapi import FastAPI
 from starlette.concurrency import run_in_threadpool
 
@@ -89,18 +90,19 @@ from src.roadmap_service import (
 app = FastAPI(title="AI Career Coach")
 
 
-# Allow the deployed frontend and local development frontend
-# to make browser requests to this API.
-# CORS does not provide authentication or conversation ownership checks.
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+
+if frontend_url:
+    allowed_origins.append(frontend_url)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        # Replace this with your deployed CareerPilot AI frontend URL.
-        "https://your-careerpilot-frontend.vercel.app",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type"],
