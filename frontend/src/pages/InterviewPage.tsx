@@ -136,7 +136,23 @@ export default function InterviewPage({ intake }: PageProps) {
       setBusy(false);
     }
   };
+  function handleNewInterview() {
+    if (busy) return;
 
+    if (
+      answer.trim() &&
+      !window.confirm(
+        "Return to interview setup? Your unsent answer will be cleared.",
+      )
+    ) {
+      return;
+    }
+
+    setInterview(null);
+    setAnswer("");
+    setError("");
+    setMustReload(false);
+  }
   async function handleFinish() {
     if (!interview || busy || mustReload) return;
 
@@ -240,7 +256,7 @@ export default function InterviewPage({ intake }: PageProps) {
                 disabled={busy}
                 onClick={() => void handleLoad()}
               >
-                Resume saved interview
+                Open previous interview
               </button>
             )}
           </div>
@@ -256,14 +272,25 @@ export default function InterviewPage({ intake }: PageProps) {
               Follow-ups: {interview.follow_ups_asked}
             </p>
 
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={busy}
-              onClick={() => void handleLoad()}
-            >
-              Reload progress
-            </button>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={busy}
+                  onClick={() => void handleLoad()}
+                >
+                  Reload progress
+                </button>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={busy}
+                  onClick={handleNewInterview}
+                >
+                  Start new interview
+                </button>
+            </div>
           </div>
 
           <div className="interview-history">
