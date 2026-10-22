@@ -1693,6 +1693,369 @@ summary:focus-visible {
   margin-top: 0;
 }
 
+/* Compact desktop typography and application spacing */
+@media (min-width: 761px) {
+  :root {
+    font-size: 15px;
+  }
+
+  body {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  .sidebar {
+    width: 230px;
+    padding: 24px 18px;
+  }
+
+  .sidebar h1 {
+    font-size: 22px;
+  }
+
+  .sidebar nav {
+    gap: 6px;
+    margin-top: 24px;
+  }
+
+  .nav-item {
+    padding: 10px 12px;
+  }
+
+  .workspace-header {
+    gap: 16px;
+    padding: 14px 28px;
+  }
+
+  .main-content {
+    padding: 28px;
+  }
+
+  .main-content h2 {
+    font-size: 27px;
+  }
+
+  .main-content .card {
+    padding: 24px;
+  }
+
+  .primary-button {
+    padding: 10px 16px;
+  }
+
+  .secondary-button,
+  .danger-button {
+    padding: 9px 14px;
+  }
+
+  .app-footer {
+    padding: 12px 0;
+  }
+}
+
+/* Home: four feature cards */
+.main-content:has(> .coach-home) {
+  padding: 22px 28px;
+}
+
+.coach-home .coach-welcome {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.coach-home .coach-welcome h2 {
+  max-width: 760px;
+  margin: 4px 0 10px;
+  font-size: clamp(25px, 2.3vw, 30px);
+  line-height: 1.2;
+}
+
+.coach-home .coach-welcome .muted {
+  max-width: 740px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.coach-home .coach-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-size: 26px;
+}
+
+.coach-home .continue-preparation {
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+}
+
+.coach-home .continue-preparation h3 {
+  margin: 4px 0;
+  font-size: 17px;
+}
+
+.coach-home .home-goals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.coach-home .home-goal {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.coach-home .home-feature-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coach-home .home-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #edf2ff;
+  color: #315cce;
+}
+
+.coach-home .home-goal h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.coach-home .home-goal > p {
+  flex: 1;
+  margin: 12px 0 16px;
+  line-height: 1.5;
+}
+
+.coach-home .home-goal-button {
+  min-height: 42px;
+  width: 100%;
+  margin-top: auto;
+  padding: 10px 14px;
+}
+
+/* Study-plan shortcut */
+.coach-home .home-learning-shortcut {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid #dce3ef;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.coach-home .home-learning-shortcut h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.coach-home .home-learning-shortcut p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.coach-home .home-learning-link {
+  width: auto;
+  padding: 10px 6px;
+  border: 0;
+  background: transparent;
+  color: #315cce;
+  font-weight: 600;
+  text-align: left;
+}
+
+.coach-home .home-learning-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.coach-home .home-session-help {
+  margin: 16px 0 0;
+  color: #5b667a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .main-content:has(> .coach-home) {
+    padding: 20px 16px;
+  }
+
+  .coach-home .home-goals {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-home .home-learning-shortcut {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .coach-home .home-learning-link {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+/* Compact Home layout */
+.main-content:has(> .coach-home) {
+  padding: 20px 24px;
+}
+
+.coach-home .coach-welcome {
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.coach-home .coach-welcome h2 {
+  margin: 3px 0 8px;
+  font-size: clamp(23px, 2vw, 28px);
+}
+
+.coach-home .coach-welcome .muted {
+  max-width: 680px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Four cards in one row */
+.coach-home .home-goals {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-home .home-goal {
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.coach-home .home-feature-heading {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.coach-home .home-feature-icon {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.coach-home .home-feature-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.coach-home .home-goal h3 {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.coach-home .home-goal > p {
+  margin: 10px 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Smaller text actions instead of full-width blue buttons */
+.coach-home .home-goal-button {
+  min-height: 40px;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #315cce;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.coach-home .home-goal-button:hover {
+  border: 0;
+  background: transparent;
+  color: #244ba9;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.coach-home .home-learning-shortcut {
+  margin-top: 14px;
+  padding: 12px 16px;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.coach-home .home-learning-shortcut h3 {
+  font-size: 15px;
+}
+
+.coach-home .home-learning-shortcut p {
+  font-size: 13px;
+}
+
+.coach-home .home-learning-link {
+  font-size: 13px;
+}
+
+.coach-home .home-session-help {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+/* Adapt to the available screen width */
+@media (max-width: 1100px) {
+  .coach-home .home-goals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .main-content:has(> .coach-home) {
+    padding: 20px 16px;
+  }
+
+  .coach-home .home-learning-shortcut {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .coach-home .home-learning-link {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .coach-home .home-goals {
+    grid-template-columns: 1fr;
+  }
+
+  .coach-home .home-feature-heading {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
 .company-spinner {
   display: inline-block;
   width: 18px;

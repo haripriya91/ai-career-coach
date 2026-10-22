@@ -370,13 +370,14 @@ const CurrentPage =
       {sessionBusy ? (
         <p role="status">Updating preparation session…</p>
       ) : screen === "home" ? (
-        <HomePage
-          intake={intake}
-          onChooseGoal={chooseGoal}
-          onContinue={() =>
-            chooseGoal(intake.cvText.trim() ? "review" : "interview")
-          }
-        />
+          <HomePage
+            intake={intake}
+            onChooseGoal={chooseGoal}
+            onContinue={() =>
+              chooseGoal(intake.cvText.trim() ? "review" : "interview")
+            }
+            onOpenFeature={navigate}
+          />
       ) : screen === "intake" ? (
         <IntakePage
           key={`intake:${preparationGoal}:${intake.workspaceId ?? "new"}:${intake.intakeVersion ?? 0}:${renderEpoch}`}
