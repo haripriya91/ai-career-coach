@@ -1692,6 +1692,7 @@ summary:focus-visible {
 .privacy-dialog-actions .primary-button {
   margin-top: 0;
 }
+
 /* Compact desktop typography and application spacing */
 @media (min-width: 761px) {
   :root {
@@ -2053,4 +2054,264 @@ summary:focus-visible {
     flex-direction: row;
     align-items: center;
   }
+}
+
+.company-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(128, 128, 128, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: company-spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes company-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.company-loading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.company-loading p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.company-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(128, 128, 128, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: company-spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes company-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.company-loading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.company-loading p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Company Interview Preparation */
+
+.company-prep-page {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
+  color: #172033;
+}
+
+.company-prep-page .cp-page-header {
+  margin-bottom: 24px;
+}
+
+.company-prep-page .cp-page-header h2 {
+  margin: 6px 0 10px;
+  font-size: clamp(26px, 3vw, 34px);
+  letter-spacing: -0.025em;
+}
+
+.company-prep-page .cp-subtitle {
+  max-width: 680px;
+  margin: 0;
+  color: #5b667a;
+  line-height: 1.65;
+}
+
+.company-prep-page .cp-form-card {
+  margin-bottom: 24px;
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgb(20 33 58 / 4%);
+}
+
+.company-prep-page .cp-form-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.company-prep-page .cp-form-heading h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
+
+.company-prep-page .cp-form-heading p {
+  margin: 0;
+  color: #5b667a;
+  line-height: 1.6;
+}
+
+.company-prep-page .cp-form-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #e9effc;
+  color: #315cce;
+  font-size: 24px;
+}
+
+.company-prep-page .cp-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.company-prep-page .cp-input-grid > div {
+  min-width: 0;
+}
+
+.company-prep-page .cp-input-grid label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.company-prep-page .cp-input-grid input {
+  width: 100%;
+  min-height: 46px;
+}
+
+.company-prep-page .cp-form-card .primary-button {
+  margin-top: 18px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.company-prep-page .cp-form-card .primary-button:not(:disabled):hover {
+  background: #244ba9;
+}
+
+@media (max-width: 650px) {
+  .company-prep-page .cp-input-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .company-prep-page .cp-form-card {
+    padding: 20px;
+  }
+
+  .company-prep-page .cp-form-icon {
+    width: 38px;
+    height: 38px;
+  }
+} 
+
+
+/* Company Preparation dashboard — scoped to this page only */
+.company-prep-page { width: 100%; max-width: 1050px; margin: 0 auto; color: #172033; }
+.company-prep-page .cp-page-header { margin-bottom: 24px; }
+.company-prep-page .cp-page-header h2 { margin: 6px 0 10px; font-size: clamp(26px, 3vw, 34px); letter-spacing: -.025em; }
+.company-prep-page .cp-subtitle { max-width: 700px; margin: 0; color: #5b667a; line-height: 1.65; }
+.company-prep-page .cp-form-card { margin-bottom: 24px; padding: 28px; border-radius: 16px; }
+.company-prep-page .cp-form-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+.company-prep-page .cp-form-heading h3 { margin: 0 0 8px; font-size: 19px; }
+.company-prep-page .cp-form-heading p { margin: 0; color: #5b667a; line-height: 1.6; }
+.company-prep-page .cp-form-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 12px; background: #e9effc; color: #315cce; font-size: 24px; }
+.company-prep-page .cp-input-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+.company-prep-page .cp-input-grid > div { min-width: 0; }
+.company-prep-page .cp-input-grid label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+.company-prep-page .cp-input-grid input { min-height: 46px; }
+.company-prep-page .cp-generate-button { margin-top: 20px; font-weight: 600; }
+.company-prep-page .cp-generate-button:not(:disabled):hover { background: #244ba9; }
+.company-prep-page .cp-loading-saved { color: #5b667a; }
+.company-prep-page .cp-results { display: grid; gap: 20px; }
+.company-prep-page .cp-summary { padding: 26px; border: 1px solid #cfdbf5; border-radius: 18px; background: #eaf0fc; }
+.company-prep-page .cp-summary-top { display: flex; align-items: center; gap: 16px; }
+.company-prep-page .cp-company-icon { display: grid; place-items: center; flex: 0 0 56px; height: 56px; border-radius: 14px; background: white; font-size: 26px; }
+.company-prep-page .cp-summary-title { min-width: 0; flex: 1; }
+.company-prep-page .cp-small-label { margin: 0 0 5px; color: #4564aa; font-size: 11px; font-weight: 800; letter-spacing: .1em; }
+.company-prep-page .cp-summary-title h3 { margin: 0 0 4px; font-size: 25px; overflow-wrap: anywhere; }
+.company-prep-page .cp-summary-title p { margin: 0; color: #526174; }
+.company-prep-page .cp-ready { flex-shrink: 0; padding: 7px 12px; border-radius: 999px; background: #dff5e7; color: #14683b; font-size: 12px; font-weight: 700; }
+.company-prep-page .cp-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 22px; }
+.company-prep-page .cp-stats > div { padding: 16px; border-radius: 12px; background: white; }
+.company-prep-page .cp-stats strong { display: block; font-size: 26px; line-height: 1.1; }
+.company-prep-page .cp-stats span { display: block; margin-top: 7px; color: #5b667a; font-size: 13px; }
+.company-prep-page .cp-report-card { min-width: 0; padding: 24px; }
+.company-prep-page .cp-report-card h3 { margin: 0 0 16px; font-size: 18px; }
+.company-prep-page .cp-report-card h3 > span { margin-right: 8px; color: #315cce; }
+.company-prep-page .cp-report-card p, .company-prep-page .cp-report-card li { line-height: 1.7; overflow-wrap: anywhere; }
+.company-prep-page .cp-overview-text { margin: 0; }
+.company-prep-page .cp-report-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.company-prep-page .cp-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.company-prep-page .cp-tag { max-width: 100%; padding: 7px 11px; border: 1px solid #e1e6ef; border-radius: 999px; background: #f5f7fb; color: #344054; font-size: 13px; overflow-wrap: anywhere; }
+.company-prep-page .cp-tag-blue { background: #e9effc; border-color: #d5e0f7; color: #244ba9; }
+.company-prep-page .cp-empty { color: #5b667a; }
+.company-prep-page .cp-steps { margin: 0; padding-left: 24px; }
+.company-prep-page .cp-steps li + li { margin-top: 12px; }
+.company-prep-page .cp-section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.company-prep-page .cp-section-heading h3 { margin: 4px 0 6px; font-size: 22px; }
+.company-prep-page .cp-section-heading p:not(.cp-small-label) { margin: 0; color: #5b667a; line-height: 1.5; }
+.company-prep-page .cp-count { flex-shrink: 0; padding: 7px 11px; border-radius: 999px; background: #e9effc; color: #244ba9; font-size: 12px; font-weight: 700; }
+.company-prep-page .cp-question-list { display: grid; gap: 14px; }
+.company-prep-page .cp-question-card { padding: 22px; border: 1px solid #e0e5ef; border-radius: 14px; background: #fff; }
+.company-prep-page .cp-question-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.company-prep-page .cp-question-number { color: #5b667a; font-size: 12px; font-weight: 700; }
+.company-prep-page .cp-category { padding: 5px 10px; border-radius: 999px; background: #e9effc; color: #244ba9; font-size: 12px; font-weight: 700; text-transform: capitalize; }
+.company-prep-page .cp-question-card h4 { margin: 0 0 16px; font-size: 17px; line-height: 1.5; }
+.company-prep-page .cp-tip { padding: 14px 16px; border-left: 3px solid #8ba3ce; border-radius: 8px; background: #f5f7fc; }
+.company-prep-page .cp-tip strong { font-size: 13px; color: #244ba9; }
+.company-prep-page .cp-tip p { margin: 6px 0 0; color: #46536a; line-height: 1.6; }
+.company-prep-page .cp-tips-list { margin: 0; padding-left: 22px; }
+.company-prep-page .cp-tips-list li + li { margin-top: 10px; }
+.company-prep-page .cp-references { display: grid; gap: 0; }
+.company-prep-page .cp-references details + details { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e5ef; }
+.company-prep-page .cp-references summary { display: flex; justify-content: space-between; gap: 12px; cursor: pointer; font-weight: 700; }
+.company-prep-page .cp-references summary span { color: #5b667a; font-size: 13px; font-weight: 400; }
+.company-prep-page .cp-source-list { margin: 16px 0 0; padding-left: 22px; }
+.company-prep-page .cp-source-list li + li { margin-top: 8px; }
+.company-prep-page .cp-source-list a { color: #315cce; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .company-prep-page .cp-input-grid, .company-prep-page .cp-report-grid { grid-template-columns: 1fr; }
+  .company-prep-page .cp-form-card, .company-prep-page .cp-report-card, .company-prep-page .cp-summary { padding: 20px; }
+  .company-prep-page .cp-summary-top { flex-wrap: wrap; }
+  .company-prep-page .cp-ready { margin-left: auto; }
+  .company-prep-page .cp-stats { gap: 8px; }
+  .company-prep-page .cp-stats > div { padding: 12px; }
+  .company-prep-page .cp-stats strong { font-size: 22px; }
+  .company-prep-page .cp-stats span { font-size: 11px; }
+  .company-prep-page .cp-section-heading { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .company-prep-page .company-spinner { animation: none; }
 }
