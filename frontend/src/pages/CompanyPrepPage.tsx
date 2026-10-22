@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   createWorkspace,
@@ -225,6 +225,10 @@ async function handleGenerate() {
   </p>
 )}
    </div>
+
+     {loading && (
+      <p role="status">Loading saved company preparation...</p> 
+     )}
 
 
       {result && (
