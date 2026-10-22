@@ -25,51 +25,48 @@ export default function CompanyPrepPage({
   const [report, setReport] = useState<CompanyPrepResponse | null>(
     null,
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(workspaceId));
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
   // Load saved research when the page opens.
   useEffect(() => {
-    if (!workspaceId) {
-      setLoading(false);
-      return;
-    }
+  if (!workspaceId) {
+    return;
+  }
 
-    const controller = new AbortController();
+  const controller = new AbortController();
 
-    async function fetchReport() {
-      try {
-        setLoading(true);
+  async function fetchReport() {
+    try {
+      const response = await loadCompanyPrep(
+        workspaceId!,
+        controller.signal,
+      );
+
+      if (!controller.signal.aborted) {
+        setReport(response.found ? response.result : null);
         setError("");
-
-        const response = await loadCompanyPrep(
-          workspaceId!,
-          controller.signal,
+      }
+    } catch (err) {
+      if (!controller.signal.aborted) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load company preparation.",
         );
-
-        if (!controller.signal.aborted) {
-          setReport(response.found ? response.result : null);
-        }
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to load company preparation.",
-          );
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoading(false);
       }
     }
+  }
 
-    void fetchReport();
+  void fetchReport();
 
-    return () => controller.abort();
-  }, [workspaceId]);
+  return () => controller.abort();
+}, [workspaceId]);
 
  
 async function handleGenerate() {
