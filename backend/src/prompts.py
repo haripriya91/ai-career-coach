@@ -49,10 +49,16 @@ Statuses:
 - Not evidenced does not mean the candidate lacks the skill.
 
 Evidence:
-- job_evidence must be a short exact quotation from the job description.
-- For matched and partial findings, cv_evidence must be a short exact
-  quotation from the CV.
-- For not_evidenced findings, cv_evidence must be null.
+- job_evidence must be a short, continuous excerpt copied directly
+  from job_description.
+- For matched and partial findings, cv_evidence must be a short,
+  continuous excerpt copied directly from cv_text.
+- Copy the original words exactly. Do not paraphrase, correct spelling,
+  change punctuation, combine separate passages, or insert ellipses.
+- Do not add surrounding quotation marks unless they appear in the source.
+- Before returning each excerpt, check that it appears in its source.
+- If there is no supporting CV excerpt, use not_evidenced and set
+  cv_evidence to null. Do not invent evidence.
 - Explain how the evidence supports the status.
 - Never invent experience, qualifications, metrics, or proficiency.
 

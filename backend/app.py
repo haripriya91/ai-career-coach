@@ -85,7 +85,9 @@ from src.roadmap_service import (
     RoadmapChangedError,
     RoadmapNotFoundError,
 )
+import logging
 
+logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="AI Career Coach")
 
@@ -969,7 +971,24 @@ def create_job_fit(workspace_id: UUID):
             "The AI request failed. Check the configured model and service.",
         ) from None
 
-    except (JobFitGenerationError, ValidationError):
+    except JobFitGenerationError as exc:
+        logger.error("Job-fit generation failed: %s", exc)
+
+        raise HTTPException(
+            502,
+            "A valid job-fit analysis could not be produced. Please retry.",
+        ) from None
+
+    except ValidationError as exc:
+        logger.error(
+            "Job-fit validation failed: %s",
+            exc.errors(
+                include_input=False,
+                include_context=False,
+                include_url=False,
+            ),
+        )
+
         raise HTTPException(
             502,
             "A valid job-fit analysis could not be produced. Please retry.",

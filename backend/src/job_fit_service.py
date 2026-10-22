@@ -160,48 +160,67 @@ def generate_job_fit(
             "OPENAI_MODEL is not configured."
         )
 
-    # Uses OPENAI_API_KEY from your existing environment.
-    client = OpenAI(
-        timeout=90.0,
-        max_retries=1,
+    input_data = json.dumps(
+        {
+            "target_role": intake.get("target_role", ""),
+            "company": intake.get("company", ""),
+            "cv_text": cv_text,
+            "job_description": job_description,
+        },
+        ensure_ascii=False,
     )
 
-    response = client.responses.parse(
-        model=model,
-        instructions=JOB_FIT_PROMPT,
-        input=[
-            {
-                "role": "user",
-                "content": json.dumps(
+    instructions = JOB_FIT_PROMPT
+
+    with OpenAI(timeout=90.0, max_retries=1) as client:
+        # Retry generation once if the assessment fails validation.
+        for attempt in range(2):
+            response = client.responses.parse(
+                model=model,
+                instructions=instructions,
+                input=[
                     {
-                        "target_role": intake.get(
-                            "target_role", ""
-                        ),
-                        "company": intake.get("company", ""),
-                        "cv_text": cv_text,
-                        "job_description": job_description,
-                    },
-                    ensure_ascii=False,
-                ),
-            }
-        ],
-        text_format=JobFitAssessment,
-        max_output_tokens=6000,
-        store=False,
-    )
+                        "role": "user",
+                        "content": input_data,
+                    }
+                ],
+                text_format=JobFitAssessment,
+                max_output_tokens=6000,
+                store=False,
+            )
 
-    assessment = response.output_parsed
+            assessment = response.output_parsed
 
-    if assessment is None:
-        raise JobFitGenerationError(
-            "The AI did not return a complete assessment."
-        )
+            try:
+                if assessment is None:
+                    raise JobFitGenerationError(
+                        "The AI did not return a complete assessment."
+                    )
 
-    validate_assessment(
-        assessment,
-        cv_text,
-        job_description,
-    )
+                validate_assessment(
+                    assessment,
+                    cv_text,
+                    job_description,
+                )
+
+            except JobFitGenerationError as exc:
+                # The second failed attempt returns the existing error.
+                if attempt == 1:
+                    raise
+
+                instructions = (
+                    JOB_FIT_PROMPT
+                    + "\n\nThe previous attempt failed validation: "
+                    + str(exc)
+                    + "\nGenerate a fresh assessment. Check every "
+                    "evidence excerpt against the supplied source "
+                    "text. Copy short, continuous excerpts exactly "
+                    "without rewriting them."
+                )
+
+            else:
+                # Validation passed: no further AI request is needed.
+                break
 
     result = JobFitResult(
         **assessment.model_dump(),
@@ -210,8 +229,9 @@ def generate_job_fit(
 
     metadata = {
         "model": model,
-        "prompt_version": "job-fit-v1",
+        "prompt_version": "job-fit-v2",
         "scoring_version": "required-2-preferred-1-v1",
+        "generation_attempts": attempt + 1,
         "usage": (
             response.usage.model_dump(mode="json")
             if response.usage
