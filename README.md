@@ -1,6 +1,6 @@
 # AI Career Coach
 
-AI Career Coach is a full-stack career preparation app built with React, FastAPI, PostgreSQL, and the OpenAI API. It brings CV feedback, mock interviews, job-fit analysis, company research, and learning roadmaps into one saved workspace.
+AI Career Coach helps job seekers prepare for applications in one saved workspace, with CV feedback, mock interviews, job-fit analysis, company research, and personalized learning roadmaps.
 
 ## Project Overview
 
@@ -18,29 +18,20 @@ Preparing for a job application often means switching between tools and repeated
 
 ## Architecture
 
-The React frontend communicates with a FastAPI backend. The backend validates requests, coordinates the AI workflows, and stores workspaces and generated results in PostgreSQL.
+The frontend collects candidate details and displays coaching results. The backend handles document extraction, workspace persistence, and AI workflows.
 
-```mermaid
-flowchart TD
-    UI[React frontend] --> API[FastAPI backend]
-    API --> Extract[PDF and DOCX extraction]
-    API --> Services[AI workflow services]
-    API --> DB[(PostgreSQL)]
-    Services --> LLM[OpenAI API]
-    Services --> Search[Company search tools]
-    Services --> DB
-```
+![AI Career Coach architecture and CV-to-AI workflow](docs/architecture.png)
 
-### How the LLM workflow works
+### From CV upload to AI feedback
 
-1. The user uploads or pastes a CV and confirms the preparation details.
-2. The backend saves a workspace with a versioned intake payload.
-3. A selected service combines the relevant intake with task-specific prompts.
-4. The OpenAI API generates analysis or coaching content; Pydantic schemas define and validate structured payloads.
-5. Generated artifacts are stored with the intake version used to create them, allowing stale-result detection after profile changes.
-6. Mock interviews additionally maintain question, answer, and interview state across turns.
+1. **Extract:** The frontend uploads a PDF or DOCX to `/api/cv/extract`. The backend extracts text and returns it to the intake form. Users can also paste CV text directly.
+2. **Confirm:** The user reviews the text, adds the target role, company, and job description, and confirms the intake.
+3. **Save:** The backend stores the confirmed intake as a versioned workspace in PostgreSQL.
+4. **Generate:** When the user requests a preparation task, the backend loads the saved context and passes it to the relevant AI service with task-specific prompts. Company preparation also uses search tools.
+5. **Validate and store:** The backend validates structured payloads with Pydantic and stores generated results with their intake version.
+6. **Display:** The frontend displays the results and lets the user reopen the workspace later. Mock interviews also maintain questions, answers, and interview state across turns.
 
-This application uses pretrained LLMs through an API; it does not train a custom model. The model is configured through `OPENAI_MODEL`.
+Document extraction prepares the CV text; AI services use that text through the confirmed workspace. The uploaded document does not need a direct connection to the OpenAI API.
 
 ### Tech stack
 
@@ -102,6 +93,7 @@ FRONTEND_URL=
 - `DATABASE_URL`: PostgreSQL connection string.
 - `OPENAI_API_KEY`: Key for AI requests.
 - `OPENAI_MODEL`: Model used by the AI services.
+- `OPENAI_COMPANY_MODEL`: Company-preparation model configuration.
 - `FRONTEND_URL`: Allowed frontend origin, if read by the backend CORS configuration. For local development, use `http://localhost:5173`.
 
 If company search requires separate credentials, configure those using the variable names expected by `search_tools.py`.
@@ -204,16 +196,7 @@ Run available backend tests against a separate test database. Build and lint che
 
 See `/docs` on the running backend for request and response schemas.
 
-## Key Findings / Limitations
-
-### Key findings
-
-- A shared intake lets users reuse candidate and role context across preparation tasks.
-- Versioned intake helps identify saved results generated before profile changes.
-- Structured schemas validate payload format; users still need to check the quality and accuracy of the advice.
-- PostgreSQL preserves workspace data, while browser local storage holds recent session identifiers.
-
-### Limitations
+## Limitations
 
 - **AI reliability:** Feedback may contain unsupported claims or inconsistent suggestions. Users should review recommendations before applying them.
 - **Job-fit scoring:** Scores are coaching estimates, not employer ATS scores or probabilities of being hired.
@@ -222,12 +205,13 @@ See `/docs` on the running backend for request and response schemas.
 - **Cost and latency:** AI workflows depend on external API availability, rate limits, and usage costs.
 - **Session history:** Recent workspace identifiers are stored in browser local storage; clearing it can remove those shortcuts.
 
-### Future improvements
+## Future Improvements
 
-- Evaluate feedback relevance and factual grounding using representative preparation scenarios.
-- Improve document extraction and company-source attribution.
-- Measure response time and API cost across workflows.
-- Extend security testing and workspace access controls.
+- **User accounts:** Add registration and login so users can access their preparation history across devices.
+- **Personal preparation profiles:** Let users reuse their CV and preferences across multiple role-specific workspaces.
+- **Preparation progress:** Track completed activities and learning goals for each application.
+- **Document and research quality:** Improve CV extraction and company-source attribution.
+- **Performance and reliability:** Track API cost and response time, and expand output-quality and security testing.
 
 ### Data and security
 
